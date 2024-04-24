@@ -5,6 +5,7 @@ import com.zzy.usercenter.web.pojo.Request.RegisterRequest;
 import com.zzy.usercenter.web.pojo.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
@@ -15,5 +16,6 @@ import java.util.Map;
 public interface UserService extends IService<User> {
 
     String userRegister(RegisterRequest registerRequest);
-    String userLogin(LoginRequest loginRequest);
+    User userLogin(String useraccount, String password, HttpServletRequest httpServletRequest);
+    User getSaftyuser(User user);
 }

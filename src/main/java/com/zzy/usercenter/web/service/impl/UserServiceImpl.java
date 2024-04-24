@@ -2,20 +2,20 @@ package com.zzy.usercenter.web.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.zzy.usercenter.web.pojo.Request.LoginRequest;
 import com.zzy.usercenter.web.pojo.Request.RegisterRequest;
 import com.zzy.usercenter.web.service.UserService;
 import com.zzy.usercenter.web.pojo.User;
 import com.zzy.usercenter.web.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
-import java.util.Map;
-import java.util.Queue;
+
+import static com.zzy.usercenter.web.constant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * @author T041018
@@ -45,7 +45,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         String confirmPassword = data.getConfirmPassword();
         String avatarUrl = data.getAvatarUrl();
         Integer gender = data.getGender();
-
+        if (StringUtils.isAnyBlank(useraccount, username, password, confirmPassword)) return "参数为空";
         if (useraccount.length() < 8) return new String("The length of accoung is too short");
         if (!password.equals(confirmPassword)) return "两次密码不一致";
         QueryWrapper queryWrapper = new QueryWrapper();
@@ -71,9 +71,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     @Override
-    public String userLogin(LoginRequest loginRequest) {
-        String useraccount = loginRequest.getUseraccount();
-        String password = loginRequest.getPassword();
+    public User userLogin(String useraccount, String password, HttpServletRequest httpServletRequest) {
 
         String encryptPassword = DigestUtils.md5DigestAsHex((SALT + password).getBytes());
         QueryWrapper queryWrapper = new QueryWrapper();
@@ -83,12 +81,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         User user = userMapper.selectOne(queryWrapper);
         if(user == null) {
             log.info("user login failed");
-            return "密码或者账户错误";
+            return null;
         }
-        return "登录成功";
+        User saftyUser = getSaftyuser(user);
+        httpServletRequest.getSession().setAttribute(USER_LOGIN_STATE, saftyUser);
+        return saftyUser;
     };
 
-
+    @Override
+    public User getSaftyuser(User user) {
+        User saftyUser = new User();
+        saftyUser.setUsername(user.getUsername());
+        saftyUser.setUseraccount(user.getUseraccount());
+        saftyUser.setAvatarurl(user.getAvatarurl());
+        saftyUser.setGender(user.getGender());
+        return saftyUser;
+    }
 }
 
 
